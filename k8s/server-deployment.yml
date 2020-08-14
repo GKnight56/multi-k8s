@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server-deploy
+spec:
+  replicas: 3
+  selector:
+    # specify the label of the template to use
+    matchLabels:
+      component: server
+  template:
+    metadata:
+      labels:
+        component: server
+    spec:
+      containers:
+        - name: server
+          image: stan56/multi-server
+          ports:
+            # expose container's port 3000
+            - containerPort: 5000
+          env:
+            - name: REDIS_HOST
+              value: redis-cluster-ip   # from redis Cluster IP svc cfg file
+            - name: REDIS_PORT
+              value: '6379'
+            - name: PGUSER
+              value: postgres
+            - name: PGHOST
+              value: postgres-cluster-ip   # from postgres Cluster IP svc cfg file
+            - name: PGPORT
+              value: '5432'
+            - name: PGDATABASE
+              value: postgres
+            - name: PGPASSWORD
+              valueFrom:
+                # defined in the secret object created with kubectl command
+                secretKeyRef:
+                  name: pgpassword
+                  key: PGPASSWORD
+
+## kubectl cmd to create secret:
+# kubectl create secret generic pgpassword --from-literal PGPASSWORD=12345asdf
+# pgpassword --> secret's name
+# PGPASSWORD --> secret's key

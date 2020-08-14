@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name:  server-cluster-ip
+spec:
+  type:  ClusterIP
+  selector:
+    # specify the label of the object to forwards traffic to
+    component:  server
+  ports:
+    - port: 5000          # exposed to other pods/objects
+      targetPort: 5000    # container's exposed port
+    
+  

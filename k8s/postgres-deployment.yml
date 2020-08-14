@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deploy
+spec:
+  replicas: 1
+  selector:
+    # specify the label of the template to use
+    matchLabels:
+      component: postgres
+  template:
+    metadata:
+      labels:
+        component: postgres
+    spec:
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim  # defined in pv-claim config file
+      containers:
+        - name: postgres
+          image: postgres:10.5
+          ports:
+            # expose container's port 
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-storage  # defined in the volumes section above
+              mountPath: /var/lib/postgresql/data
+              subPath: postgres   # files in the volume will be nested in this dir
+          # set database password (overriding default)
+          env: 
+            - name: PGPASSWORD
+              valueFrom:
+                # see server-deployment for more info
+                secretKeyRef:
+                  name: pgpassword
+                  key: PGPASSWORD

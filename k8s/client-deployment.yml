@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-deploy
+spec:
+  replicas: 3
+  selector:
+    # specify the label of the template to use
+    matchLabels:
+      component: web
+  template:
+    metadata:
+      labels:
+        component: web
+    spec:
+      containers:
+        - name: client
+          image: stan56/multi-client
+          ports:
+            # expose container's port 3000
+            - containerPort: 3000
