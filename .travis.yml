@@ -1,0 +1,40 @@
+language: generic
+sudo: required
+services:
+  - docker
+env:
+  global:
+    # determine the current git commit SHA value
+    - GIT_SHA=$(git rev-parse HEAD)
+    # configure gcloud commands not to require user input
+    - CLOUDSDK_CORE_DISABLE_PROMPTS=1
+
+before_install:
+  # install GCP SDK & configure GCP settings
+  - curl https://sdk.cloud.google.com | bash > /dev/null;
+  - source $HOME/google-cloud-sdk/path.bash.inc
+  - gcloud components update kubectl
+  # decrypt gcp_key.json.enc (GCP acct credentials) file
+  - openssl aes-256-cbc -K $encrypted_572ccecf1504_key -iv $encrypted_572ccecf1504_iv -in gcp_key.json.enc -out gcp_key.json -d
+  # authenticate to GCP using svc acct key
+  - gcloud auth activate-service-account --key-file gcp_key.json
+  - gcloud config set project banded-oven-286518
+  - gcloud config set compute/zone us-east1-b
+  # specify GKE cluster name, i.e. "multi-cluster"
+  - gcloud container clusters get-credentials multi-cluster
+  # log in to Docker Hub
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # build docker image before running the test
+  - docker build -t stan56/react-test -f ./client/Dockerfile.dev ./client
+
+# run the test suite
+# CI option added for test to exit on completion instead of waiting for input
+script:
+  - docker run -e CI=true stan56/react-test npm run test
+
+deploy:
+  provider: script
+  script: bash ./deploy.sh
+  on:
+    branch: master
+    
